@@ -53,6 +53,10 @@ class Database:
     def create_table():
         Base.metadata.create_all(engine)
 
+    @staticmethod
+    def create_index():
+        pass
+
     def update_stations(self, stations: Stations, regions: Regions):
         for item in stations.all:
             station = Station(
