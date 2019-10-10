@@ -11,10 +11,16 @@ class TrainingData:
 
     def process(self):
         dataframe = pd.read_csv(self.source_file_path)
-        dataframe['station_id'] = dataframe['start station id']
+        dataframe = dataframe.rename(columns={
+            'tripduration': 'trip_duration',
+            'starttime': 'start_time',
+            'bikeid': 'bike_id',
+            'usertype': 'user_type',
+            'start station id': 'start_station_id',
+            'birth year': 'birth_year',
+        })
         dataframe = dataframe.drop(columns=[
             'stoptime',
-            'start station id',
             'start station name',
             'start station latitude',
             'start station longitude',
@@ -23,7 +29,6 @@ class TrainingData:
             'end station latitude',
             'end station longitude'
         ])
-
         stations = self.stations.to_dataframe()
-        dataframe = pd.merge(dataframe, stations, left_on='station_id', right_index=True, how='left')
+        dataframe = pd.merge(dataframe, stations, left_on='start_station_id', right_index=True, how='left')
         dataframe.to_csv('training.csv')

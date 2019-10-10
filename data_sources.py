@@ -17,7 +17,7 @@ class JSONDataSource:
         raise NotImplementedError()
 
     def __getitem__(self, item):
-        return self._cache.get(id)
+        return self._cache.get(item)
 
 
 class CSVDataSource:
@@ -52,14 +52,6 @@ class Stations(JSONDataSource):
     @property
     def all(self):
         return self._cache.values()
-
-    def get_region_id(self, station_id):
-        station = self[station_id] or {}
-        return station.get('region_id')
-
-    def get_capacity(self, station_id):
-        station = self[station_id] or {}
-        return station.get('capacity')
 
     def to_dataframe(self):
         data = {int(station_id): {

@@ -1,27 +1,28 @@
-from datarobot import Deployment, PredictionServer
+# from datarobot import Deployment, PredictionServer
+from processor.training import TrainingData
 
-import database
+from database import Database
+from scoring import Scoring
+from data_sources import Stations, Regions, Trips
 
 
-def create_deployment():
-    model_id = '5d9d24e95de2e14a72e5b541'
-    label = 'BlueBike Ridership -- trip length prediction'
-    server = PredictionServer.list()[0]
-    deployment = Deployment.create_from_learning_model(
-        model_id, label, default_prediction_server_id=server.id
-    )
-    print(deployment)
-
+def import_data():
+    stations = Stations()
+    regions = Regions()
+    trip_csvs = ['data/201908-bluebikes-tripdata.csv']
+    with Database() as database:
+        database.update_stations(stations, regions)
+        for trip_csv in trip_csvs:
+            trips = Trips(trip_csv)
+            database.update_trip_data(trips)
 
 if __name__ == '__main__':
-    database.create_table_if_not_exist()
+    # TrainingData('data/201907-bluebikes-tripdata.csv').process()
+    Database.create_table()
 
-    # update data stored in the system
-    # stations = Stations()
-    # regions = Regions()
-    # trips = Trips('data/201908-bluebikes-tripdata.csv')
-    # with Dumper() as dumper:
-    #     dumper.update_stations(stations, regions)
-    #     dumper.update_trip_data(trips)
+    import_data()
+
+    # scoring = Scoring()
+    # scoring.select_data()
 
     # create_deployment()
