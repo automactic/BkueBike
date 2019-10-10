@@ -61,11 +61,9 @@ class Scoring:
         api_endpoint = os.getenv('DATAROBOT_PRED_ENDPOINT')
         api_token = os.getenv('DATAROBOT_API_TOKEN')
         deployment_id = os.getenv('DEPLOYMENT_ID')
+        datarobot_key = os.getenv('DATAROBOT_KEY')
 
-        headers = {
-            'datarobot-key': 'cc0e0c01-8463-3e63-4794-5bea42900997',
-            # 'X-DataRobot-Prediction-Timestamp':
-        }
+        headers = {'datarobot-key': datarobot_key}
         url = f'{api_endpoint}/deployments/{deployment_id}/predictions'
         response = requests.post(url, auth=(username, api_token), json=payload, headers=headers)
         return response.json()
