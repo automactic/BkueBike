@@ -3,7 +3,7 @@ import logging
 
 from data_sources import Stations, Regions, Trips
 from database import Database
-from pipeline import TrainingData, Scoring, Actuals
+from pipeline import TrainingData, Scoring, Actuals, DataImporter
 
 logger = logging.getLogger(__name__)
 
@@ -13,21 +13,10 @@ def export_training_data():
 
 
 async def import_and_update_database():
+    importer = DataImporter()
     while True:
-        logger.info('Database update, starting...')
-
-        stations = Stations()
-        regions = Regions()
-        trip_csv_paths = ['data/201908-bluebikes-tripdata.csv']
-        with Database() as database:
-            database.update_stations(stations, regions)
-            for trip_csv_path in trip_csv_paths:
-                trips = Trips(trip_csv_path)
-                database.update_trip_data(trips)
-
-        logger.info('Database update, done!')
-
-        await asyncio.sleep(120)
+        importer.scan_and_update()
+        await asyncio.sleep(600)
 
 
 async def score():
@@ -41,7 +30,7 @@ async def actual_submit():
     actuals = Actuals()
     while True:
         actuals.upload()
-        await asyncio.sleep(60)
+        await asyncio.sleep(600)
 
 
 if __name__ == '__main__':
