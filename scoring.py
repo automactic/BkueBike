@@ -11,15 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class Scoring:
-    def select_prediction_payload(self) -> [dict]:
-        with Database() as database:
-            now = datetime.now().replace(tzinfo=pytz.utc)
-            start = now.replace(2019, 8, second=0, microsecond=0)
-            end = start + timedelta(minutes=1)
-            range = (start, end)
-            trips = database.get_trip_data_without_predictions(range)
-            return [self._assemble_prediction_payload(trip) for trip in trips]
-
     def predict(self):
         # get prediction payload
         payload = self.select_prediction_payload()
@@ -38,7 +29,16 @@ class Scoring:
         with Database() as database:
             database.update_predicted_trip_duration(predicted_values)
 
-        logger.info(f'Predictions made: {len(predicted_values)} rows')
+        logger.info(f'Scored: {len(predicted_values)} rows')
+
+    def select_prediction_payload(self) -> [dict]:
+        with Database() as database:
+            now = datetime.now().replace(tzinfo=pytz.utc)
+            start = now.replace(2019, 8, second=0, microsecond=0)
+            end = start + timedelta(minutes=1)
+            range = (start, end)
+            trips = database.get_trip_data(range, without_predictions=True)
+            return [self._assemble_prediction_payload(trip) for trip in trips]
 
     @staticmethod
     def _assemble_prediction_payload(trip: Trip):

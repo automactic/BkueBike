@@ -94,11 +94,11 @@ class Database:
                 self.session.add_all(batch)
                 batch = []
 
-    def get_trip_data_without_predictions(self, start_time_range) -> [Trip]:
-        return self.session.query(Trip).join(Station).filter(
-            Trip.start_time.between(start_time_range[0], start_time_range[1]),
-            Trip.predicted_trip_duration.is_(None)
-        ).limit(10).all()
+    def get_trip_data(self, start_time_range, without_predictions=True, limit=100) -> [Trip]:
+        args = [Trip.start_time.between(start_time_range[0], start_time_range[1])]
+        if without_predictions is True:
+            args.append(Trip.predicted_trip_duration.is_(None))
+        return self.session.query(Trip).join(Station).filter(*args).limit(limit).all()
 
     def update_predicted_trip_duration(self, updates):
         self.session.query(Trip).update({

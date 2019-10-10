@@ -28,9 +28,14 @@ async def import_and_update_database():
 
         logger.info('Database update, done!')
 
-        await asyncio.sleep(60)
+        await asyncio.sleep(120)
 
 
+async def score():
+    while True:
+        scoring = Scoring()
+        scoring.predict()
+        await asyncio.sleep(10)
 
 
 if __name__ == '__main__':
@@ -44,8 +49,6 @@ if __name__ == '__main__':
     # start run loop
     loop = asyncio.get_event_loop()
     loop.create_task(import_and_update_database())
+    loop.create_task(score())
     loop.run_forever()
     loop.close()
-
-    # scoring = Scoring()
-    # scoring.predict()
