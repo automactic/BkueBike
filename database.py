@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from data_sources import Stations, Regions, Trips
 
-engine = create_engine('sqlite:///test.sqlite')
+engine = create_engine('sqlite:///data.sqlite')
 Base = declarative_base()
 logger = logging.getLogger(__name__)
 
