@@ -29,11 +29,11 @@ class Scoring:
         with Database() as database:
             database.update_predicted_trip_duration(predicted_values)
 
-        logger.info(f'Scored: {len(predicted_values)} rows')
+        logger.info(f'{len(predicted_values)} rows were scored')
 
     def select_prediction_payload(self) -> [dict]:
         with Database() as database:
-            now = datetime.now().replace(tzinfo=pytz.utc)
+            now = datetime.utcnow().replace(tzinfo=pytz.utc)
             start = now.replace(2019, 8, second=0, microsecond=0)
             end = start + timedelta(minutes=1)
             range = (start, end)
