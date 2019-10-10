@@ -109,6 +109,19 @@ class Database:
             )
         }, synchronize_session=False)
 
+    def get_actuals(self, limit=1000):
+        return self.session.query(Trip).filter(
+            Trip.predicted_trip_duration.isnot(None),
+            Trip.actual_sent.isnot(True)
+        ).limit(limit).all()
+
+    def mark_actuals_submitted(self, trip_ids):
+        self.session.query(Trip).filter(
+            Trip.id.in_(trip_ids)
+        ).update({
+            Trip.actual_sent: True
+        }, synchronize_session=False)
+
     def _trip_exists_with_start_date(self, start_time):
         trip = self.session.query(Trip).filter_by(start_time=start_time).first()
         return trip is not None
