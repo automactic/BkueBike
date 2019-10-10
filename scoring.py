@@ -1,23 +1,47 @@
+import logging
 import os
 from datetime import datetime, timedelta
-import pytz
 
+import pytz
 import requests
 
 from database import Database, Trip
 
+logger = logging.getLogger(__name__)
+
 
 class Scoring:
-    def select_data(self):
+    def select_prediction_payload(self) -> [dict]:
         with Database() as database:
             now = datetime.now().replace(tzinfo=pytz.utc)
             start = now.replace(2019, 8, second=0, microsecond=0)
             end = start + timedelta(minutes=1)
             range = (start, end)
             trips = database.get_trip_data_without_predictions(range)
-            print(trips[0].start_station)
+            return [self._assemble_prediction_payload(trip) for trip in trips]
 
-    def _assemble_prediction_payload(self, trip: Trip):
+    def predict(self):
+        # get prediction payload
+        payload = self.select_prediction_payload()
+        if len(payload) == 0:
+            return
+
+        # make predictions
+        response = self._make_prediction_request(payload)
+        response_data = response.get('data', [])
+        predicted_values = {
+            item['passthroughValues']['trip_id']: item['prediction']
+            for item in response_data
+        }
+
+        # save predicted values
+        with Database() as database:
+            database.update_predicted_trip_duration(predicted_values)
+
+        logger.info(f'Predictions made: {len(predicted_values)} rows')
+
+    @staticmethod
+    def _assemble_prediction_payload(trip: Trip):
         return {
             'trip_id': trip.id,
             'bike_id': trip.bike_id,
@@ -25,21 +49,23 @@ class Scoring:
             'gender': trip.gender,
             'start_station_id': trip.start_station.id,
             'start_time': trip.start_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
-            # 'station_capacity': trip.start_station.
+            'station_capacity': trip.start_station.capacity,
+            'station_has_kiosk': trip.start_station.has_kiosk,
+            'station_region_id': trip.start_station.region_id,
+            'user_type': trip.user_type,
         }
 
     @staticmethod
-    def predict(data: list):
+    def _make_prediction_request(payload: list):
         username = os.getenv('DATAROBOT_USERNAME')
         api_endpoint = os.getenv('DATAROBOT_PRED_ENDPOINT')
         api_token = os.getenv('DATAROBOT_API_TOKEN')
         deployment_id = os.getenv('DEPLOYMENT_ID')
 
         headers = {
-            'Content-Type': 'application/json; charset=UTF-8',
-            'datarobot-key': '27782',
+            'datarobot-key': 'cc0e0c01-8463-3e63-4794-5bea42900997',
             # 'X-DataRobot-Prediction-Timestamp':
         }
         url = f'{api_endpoint}/deployments/{deployment_id}/predictions'
-        response = requests.post(url, auth=(username, api_token), data=data, headers=headers)
+        response = requests.post(url, auth=(username, api_token), json=payload, headers=headers)
         return response.json()

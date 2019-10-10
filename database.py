@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4
 
 from sqlalchemy import *
@@ -9,6 +10,7 @@ from data_sources import Stations, Regions, Trips
 
 engine = create_engine('sqlite:///test.sqlite')
 Base = declarative_base()
+logger = logging.getLogger(__name__)
 
 
 class Station(Base):
@@ -23,6 +25,7 @@ class Station(Base):
     region_id = Column(Float)
     region_name = Column(String(16))
     capacity = Column(Integer)
+    has_kiosk = Column(Boolean)
 
 
 class Trip(Base):
@@ -62,6 +65,7 @@ class Database:
                 region_id=item['region_id'],
                 region_name=regions[item['region_id']],
                 capacity=item['capacity'],
+                has_kiosk=item['has_kiosk']
             )
             self.session.merge(station)
 
@@ -91,6 +95,13 @@ class Database:
             Trip.start_time.between(start_time_range[0], start_time_range[1]),
             Trip.predicted_trip_duration.is_(None)
         ).limit(10).all()
+
+    def update_predicted_trip_duration(self, updates):
+        self.session.query(Trip).update({
+            Trip.predicted_trip_duration: case(
+                updates, value=Trip.id
+            )
+        }, synchronize_session=False)
 
     def _trip_exists_with_start_date(self, start_time):
         trip = self.session.query(Trip).filter_by(start_time=start_time).first()
