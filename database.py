@@ -101,6 +101,8 @@ class Database:
         return self.session.query(Trip).join(Station).filter(*args).limit(limit).all()
 
     def update_predicted_trip_duration(self, updates):
+        if not updates:
+            return
         self.session.query(Trip).filter(
             Trip.id.in_(updates)
         ).update({

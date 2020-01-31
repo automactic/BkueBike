@@ -20,10 +20,10 @@ class Scoring:
         # make predictions
         response = self._make_prediction_request(payload)
         response_data = response.get('data', [])
-        predicted_values = {
-            item['passthroughValues']['trip_id']: item['prediction']
-            for item in response_data
-        }
+
+        trip_ids = [trip['trip_id'] for trip in payload]
+        predictions = [prediction['prediction'] for prediction in response_data]
+        predicted_values = dict(zip(trip_ids, predictions))
 
         # save predicted values
         with Database() as database:
