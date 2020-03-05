@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def export_training_data():
-    TrainingData('data/201907-bluebikes-tripdata.csv').process()
+    TrainingData().process()
 
 
 async def import_and_update_database():
@@ -34,17 +34,19 @@ async def actual_submit():
 
 
 if __name__ == '__main__':
-    # initialization
-    Database.create_table()
-    Database.create_index()
+    export_training_data()
 
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-
-    # start run loop
-    loop = asyncio.get_event_loop()
-    loop.create_task(import_and_update_database())
-    loop.create_task(score())
-    loop.create_task(actual_submit())
-    loop.run_forever()
-    loop.close()
+    # # initialization
+    # Database.create_table()
+    # Database.create_index()
+    #
+    # logging.basicConfig()
+    # logging.getLogger().setLevel(logging.DEBUG)
+    #
+    # # start run loop
+    # loop = asyncio.get_event_loop()
+    # loop.create_task(import_and_update_database())
+    # loop.create_task(score())
+    # loop.create_task(actual_submit())
+    # loop.run_forever()
+    # loop.close()
