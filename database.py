@@ -36,6 +36,8 @@ class Trip(Base):
     predicted_trip_duration = Column(Float)
     start_time = Column(DateTime)
     start_station_id = Column(Integer, ForeignKey('stations.id'))
+    start_station_name = Column(String)
+    end_station_name = Column(String)
     bike_id = Column(Integer)
     user_type = Column(String)
     birth_year = Column(Integer)
@@ -84,6 +86,8 @@ class Database:
                 trip_duration=item['trip_duration'],
                 start_time=item['start_time'],
                 start_station_id=item['start_station_id'],
+                start_station_name=item['start_station_name'],
+                end_station_name=item['end_station_name'],
                 bike_id=item['bike_id'],
                 user_type=item['user_type'],
                 birth_year=item['birth_year'],

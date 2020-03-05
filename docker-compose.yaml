@@ -1,0 +1,21 @@
+version: '3.1'
+
+services:
+  pgsql:
+    image: postgres
+    restart: always
+    container_name: pgsql
+    ports:
+      - 5435:5432
+    volumes:
+      - ~/pgsql_data/:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+  bluebike:
+    build: .
+    restart: always
+    container_name: bluebike
+    depends_on:
+      - pgsql
+    volumes:
+      - /home/ubuntu/workspace/BlueBike/data:/usr/src/app/data

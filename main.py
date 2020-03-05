@@ -1,50 +1,67 @@
 import asyncio
 import logging
 
-from data_sources import Stations, Regions, Trips
-from database import Database
-from pipeline import TrainingData, Scoring, Actuals, DataImporter
+import aiohttp
 
+import sql
+from pipeline import TrainingData, Scoring, Actuals, StationDataImporter, TripDataImporter
+from pathlib import Path
+import zipfile
 logger = logging.getLogger(__name__)
 
 
 def export_training_data():
-    TrainingData('data/201907-bluebikes-tripdata.csv').process()
+    TrainingData().process()
 
 
-async def import_and_update_database():
-    importer = DataImporter()
-    while True:
-        importer.scan_and_update()
-        await asyncio.sleep(600)
+async def import_data():
+    await StationDataImporter().run()
+
+    with zipfile.ZipFile('./data/data.zip', 'r') as file:
+        file.extractall('./data')
+
+    for path in sorted(Path('./data').iterdir()):
+        if not path.name.endswith('.csv'):
+            continue
+        await TripDataImporter(path).run()
+        path.unlink()
 
 
 async def score():
-    scoring = Scoring()
-    while True:
-        scoring.predict()
-        await asyncio.sleep(10)
+    async with aiohttp.ClientSession() as session:
+        scoring = Scoring(session)
+        while True:
+            try:
+                await scoring.predict()
+                await asyncio.sleep(10)
+            except Exception as e:
+                logger.error(e)
+                await asyncio.sleep(100)
 
 
 async def actual_submit():
-    actuals = Actuals()
-    while True:
-        actuals.upload()
-        await asyncio.sleep(600)
+    async with aiohttp.ClientSession() as session:
+        actuals = Actuals(session)
+        while True:
+            try:
+                await actuals.upload()
+                await asyncio.sleep(600)
+            except Exception as e:
+                logger.error(e)
+                await asyncio.sleep(100)
 
 
 if __name__ == '__main__':
     # initialization
-    Database.create_table()
-    Database.create_index()
+    sql.create_database()
+    sql.create_tables()
 
+    # configure logger
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
     # start run loop
     loop = asyncio.get_event_loop()
-    loop.create_task(import_and_update_database())
-    loop.create_task(score())
-    loop.create_task(actual_submit())
+    loop.create_task(import_data())
     loop.run_forever()
     loop.close()
