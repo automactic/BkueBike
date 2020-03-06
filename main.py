@@ -27,15 +27,21 @@ async def score():
             try:
                 await scoring.predict()
                 await asyncio.sleep(10)
-            except Exception:
+            except Exception as e:
+                logger.error(e)
                 await asyncio.sleep(100)
 
 
 async def actual_submit():
-    actuals = Actuals()
-    while True:
-        actuals.upload()
-        await asyncio.sleep(600)
+    async with aiohttp.ClientSession() as session:
+        actuals = Actuals(session)
+        while True:
+            try:
+                await actuals.upload()
+                await asyncio.sleep(600)
+            except Exception as e:
+                logger.error(e)
+                await asyncio.sleep(100)
 
 
 if __name__ == '__main__':
@@ -50,6 +56,6 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.create_task(import_and_update_database())
     loop.create_task(score())
-    # loop.create_task(actual_submit())
+    loop.create_task(actual_submit())
     loop.run_forever()
     loop.close()
