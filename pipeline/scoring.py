@@ -52,6 +52,8 @@ class Scoring:
             'birth_year': trip.birth_year,
             'gender': trip.gender,
             'start_station_id': trip.start_station.id,
+            'start_station_name': trip.start_station_name,
+            'end_station_name': trip.end_station_name,
             'start_time': trip.start_time.strftime('%Y-%m-%d %H:%M:%S.%f'),
             'station_capacity': trip.start_station.capacity,
             'station_has_kiosk': trip.start_station.has_kiosk,
