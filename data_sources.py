@@ -71,14 +71,14 @@ class Trips(CSVDataSource):
             'usertype': 'user_type',
             'start station id': 'start_station_id',
             'birth year': 'birth_year',
+            'start station name': 'start_station_name',
+            'end station name': 'end_station_name',
         })
         self.dataframe = self.dataframe.drop(columns=[
             'stoptime',
-            'start station name',
             'start station latitude',
             'start station longitude',
             'end station id',
-            'end station name',
             'end station latitude',
             'end station longitude'
         ])

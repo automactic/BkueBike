@@ -1,7 +1,7 @@
 import logging
 import os
 
-from datarobot import Deployment
+import aiohttp
 
 from database import Database
 
@@ -9,16 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 class Actuals:
-    def __init__(self, deployment_id=None):
-        deployment_id = deployment_id or os.getenv('DEPLOYMENT_ID')
-        self.deployment = Deployment.get(deployment_id)
+    def __init__(self, session: aiohttp.ClientSession):
+        self.session = session
 
-    def upload(self):
+    async def upload(self):
         with Database() as database:
             trips = database.get_actuals()
             trip_ids = [trip.id for trip in trips]
             actuals = [{
-                'association_id': trip.id, 'actual_value': trip.trip_duration
+                'associationId': trip.id,
+                'actualValue': trip.trip_duration
             } for trip in trips]
 
         if not actuals:
@@ -26,9 +26,23 @@ class Actuals:
 
         logger.info(f'Actuals - gathering {len(actuals)} actual values to submit.')
         logger.debug(f'Actuals - trip_ids: {trip_ids}')
-        self.deployment.submit_actuals(actuals)
+
+        await self._make_request(actuals)
 
         with Database() as database:
             database.mark_actuals_submitted(trip_ids)
 
-        logger.info(f'Actuals - submitted {len(actuals)} actual values.')
+
+    async def _make_request(self, payload: list):
+        api_endpoint = os.getenv('DATAROBOT_ENDPOINT')
+        api_token = os.getenv('DATAROBOT_API_TOKEN')
+        deployment_id = os.getenv('DEPLOYMENT_ID')
+
+        headers = {'Authorization': f'Token {api_token}'}
+        url = f'{api_endpoint}/deployments/{deployment_id}/actuals/fromJSON/'
+
+        async with self.session.post(url, headers=headers, json={'data': payload}) as resp:
+            if resp.status >= 200 and resp.status < 300:
+                logger.info(f'Actuals - submitted {len(payload)} actual values.')
+            else:
+                logger.error(f'Error submitting actuals: {resp}')
