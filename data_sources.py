@@ -20,15 +20,6 @@ class JSONDataSource:
         return self._cache.get(item)
 
 
-class CSVDataSource:
-    def __init__(self, file_path):
-        self.dataframe = pd.read_csv(file_path)
-        self.post_processing()
-
-    def post_processing(self):
-        raise NotImplementedError()
-
-
 class Regions(JSONDataSource):
     def __init__(self):
         super().__init__('data/system_regions.json')
@@ -62,9 +53,13 @@ class Stations(JSONDataSource):
         return pd.DataFrame.from_dict(data, orient='index')
 
 
-class Trips(CSVDataSource):
+class Trips:
+    def __init__(self, file_path):
+        self.data_frame = pd.read_csv(file_path)
+        self.post_processing()
+
     def post_processing(self):
-        self.dataframe = self.dataframe.rename(columns={
+        self.data_frame = self.data_frame.rename(columns={
             'tripduration': 'trip_duration',
             'starttime': 'start_time',
             'bikeid': 'bike_id',
@@ -74,7 +69,7 @@ class Trips(CSVDataSource):
             'start station name': 'start_station_name',
             'end station name': 'end_station_name',
         })
-        self.dataframe = self.dataframe.drop(columns=[
+        self.data_frame = self.data_frame.drop(columns=[
             'stoptime',
             'start station latitude',
             'start station longitude',
@@ -82,11 +77,11 @@ class Trips(CSVDataSource):
             'end station latitude',
             'end station longitude'
         ])
-        self.dataframe['start_time'] = pd.to_datetime(self.dataframe['start_time'])
+        self.data_frame['start_time'] = pd.to_datetime(self.data_frame['start_time'])
 
     @property
     def first_trip_start_time(self):
-        if self.dataframe.shape[0] == 0:
+        if self.data_frame.shape[0] == 0:
             return None
         else:
-            return self.dataframe['start_time'].iloc[0]
+            return self.data_frame['start_time'].iloc[0]
