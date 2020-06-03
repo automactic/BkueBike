@@ -3,7 +3,7 @@ import logging
 
 import aiohttp
 
-from database import Database
+import sql
 from pipeline import TrainingData, Scoring, Actuals, DataImporter
 
 logger = logging.getLogger(__name__)
@@ -14,10 +14,11 @@ def export_training_data():
 
 
 async def import_and_update_database():
-    importer = DataImporter()
-    while True:
-        importer.scan_and_update()
-        await asyncio.sleep(600)
+    async with aiohttp.ClientSession() as session:
+        importer = DataImporter(session)
+        while True:
+            await importer.run()
+            await asyncio.sleep(600)
 
 
 async def score():
@@ -46,8 +47,7 @@ async def actual_submit():
 
 if __name__ == '__main__':
     # initialization
-    Database.create_table()
-    Database.create_index()
+    # sql.initialize()
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
@@ -55,7 +55,5 @@ if __name__ == '__main__':
     # start run loop
     loop = asyncio.get_event_loop()
     loop.create_task(import_and_update_database())
-    loop.create_task(score())
-    loop.create_task(actual_submit())
     loop.run_forever()
     loop.close()

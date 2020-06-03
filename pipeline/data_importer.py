@@ -18,8 +18,9 @@ class DataImporter(DatabaseMixin):
         self.session = session
 
     async def run(self):
-        stations = await self._fetch_stations()
-        await self._upsert_stations(stations)
+        while True:
+            stations = await self._fetch_stations()
+            await self._upsert_stations(stations)
 
     async def _fetch_regions(self) -> {str, Region}:
         url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
@@ -72,13 +73,18 @@ class DataImporter(DatabaseMixin):
 
         # figure out which stations should be inserted
         new_station_ids = set(stations) - set(existing_station_ids)
-        new_stations = [
-            station for station_id, station in stations.items()
+        new_stations = {
+            station_id: station for station_id, station in stations.items()
             if station_id in new_station_ids
-        ]
+        }
 
+        # insert new station in database
         async with self.conn() as conn:
-            for station in new_stations:
+            for station in new_stations.values():
                 statement = sql.stations.insert().values(**dataclasses.asdict(station))
-                result = await conn.execute(statement)
-                print(result)
+                await conn.execute(statement)
+
+        if new_stations:
+            logger.info(f'DataImporter -- found {len(new_stations)}: {new_stations.keys()}.')
+        else:
+            logger.info(f'DataImporter -- no new station found.')
