@@ -1,14 +1,16 @@
 import asyncio
 import dataclasses
 import logging
+from datetime import timedelta
 
+import pandas
 import sqlalchemy as sa
+from aiohttp import ClientSession
 
 import sql
 from entities import Region, Station
 from sql import DatabaseMixin
 from .base import HTTPSessionMixin
-from aiohttp import ClientSession
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +18,13 @@ logger = logging.getLogger(__name__)
 class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.session = None
 
     async def run(self):
         while True:
             async with self.create_session() as session:
                 stations = await self._fetch_stations(session)
             await self._upsert_stations(stations)
-            await asyncio.sleep(600)
+            await asyncio.sleep(timedelta(days=1).total_seconds())
 
     @staticmethod
     async def _fetch_regions(session: ClientSession) -> {str, Region}:
@@ -88,6 +89,7 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
                 statement = sql.stations.insert().values(**dataclasses.asdict(station))
                 await conn.execute(statement)
 
+        # logging
         if new_stations:
             logger.info(
                 f'Station -- found {len(new_stations)} new stations: {new_stations.keys()}.'
@@ -95,4 +97,6 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
 
 
 class TripDataImporter(DatabaseMixin):
-    pass
+    def __init__(self, path: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.data_frame = pandas.read_csv(path)
