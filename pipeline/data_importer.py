@@ -59,10 +59,8 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
                 station = Station(**{
                     'id': item['station_id'],
                     'name': item['name'],
-                    'short_name': item['short_name'],
                     'latitude': item['lat'],
                     'longitude': item['lon'],
-                    'region_id': region.id,
                     'region_name': region.name,
                     'capacity': item['capacity'],
                     'has_kiosk': item['has_kiosk'],
