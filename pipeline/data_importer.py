@@ -11,6 +11,7 @@ import sql
 from entities import Region, Station
 from sql import DatabaseMixin
 from .base import HTTPSessionMixin
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -94,9 +95,39 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
             logger.info(
                 f'Station -- found {len(new_stations)} new stations: {new_stations.keys()}.'
             )
+        else:
+            logger.info('Station -- no new station found.')
+
+
+class TripDataCSVColumn:
+    START_TIME = 'starttime'
 
 
 class TripDataImporter(DatabaseMixin):
-    def __init__(self, path: str, *args, **kwargs):
+    def __init__(self, path: Path, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.path = path
         self.data_frame = pandas.read_csv(path)
+
+    async def run(self):
+        # logger.info(f'Trip[{self.path.name}] -- Started')
+        if await self.is_already_imported():
+            return
+        print(len(self.data_frame))
+
+    async def is_already_imported(self):
+        start_time = self.data_frame[TripDataCSVColumn.START_TIME]
+        min_start_time, max_start_time = start_time.min(), start_time.max()
+
+        # get count of trips between start and end date
+        async with self.conn() as conn:
+            statement = sa.select([
+                sa.func.count(sql.trips.c.id).label('count')
+            ]).where(sa.and_(
+                sql.trips.c.start_time >= min_start_time,
+                sql.trips.c.start_time <= max_start_time,
+            ))
+            result = await conn.execute(statement)
+            count = await result.scalar()
+
+        return count >= len(self.data_frame)

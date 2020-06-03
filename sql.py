@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 import sqlalchemy as sa
 from aiopg.sa import create_engine, SAConnection
-from sqlalchemy import Table, Column, Integer, Float, String, Boolean, MetaData, ForeignKey
+from sqlalchemy import Table, Column, Integer, Float, String, Boolean, DateTime, MetaData, ForeignKey
 import typing
 
 metadata = MetaData()
@@ -27,6 +27,8 @@ trips = Table(
     Column('predicted_trip_duration', Float, nullable=True),
     Column('start_station_id', None, ForeignKey('stations.id')),
     Column('end_station_id', None, ForeignKey('stations.id')),
+    Column('start_time', DateTime, nullable=False),
+    Column('end_time', DateTime, nullable=False),
     Column('bike_id', Integer, nullable=False),
     Column('user_type', String, nullable=False),
     Column('user_birth_year', Integer, nullable=False),
@@ -35,12 +37,14 @@ trips = Table(
 )
 
 
-def initialize():
+def create_database():
     conn = DatabaseMixin.create_engine(database='postgres').connect()
     conn.execute("commit")
     conn.execute("CREATE DATABASE blue_bike")
     conn.close()
 
+
+def create_tables():
     metadata.create_all(DatabaseMixin.create_engine())
 
 
