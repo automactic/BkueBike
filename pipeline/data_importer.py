@@ -1,30 +1,34 @@
+import asyncio
 import dataclasses
 import logging
 
-import aiohttp
 import sqlalchemy as sa
 
 import sql
 from entities import Region, Station
 from sql import DatabaseMixin
+from .base import HTTPSessionMixin
+from aiohttp import ClientSession
 
 logger = logging.getLogger(__name__)
 
 
-class StationDataImporter(DatabaseMixin):
-    def __init__(self, session: aiohttp.ClientSession, *args, **kwargs):
+class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cwd = 'data'
-        self.session = session
+        self.session = None
 
     async def run(self):
         while True:
-            stations = await self._fetch_stations()
+            async with self.create_session() as session:
+                stations = await self._fetch_stations(session)
             await self._upsert_stations(stations)
+            await asyncio.sleep(600)
 
-    async def _fetch_regions(self) -> {str, Region}:
+    @staticmethod
+    async def _fetch_regions(session: ClientSession) -> {str, Region}:
         url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
-        async with self.session.get(url) as response:
+        async with session.get(url) as response:
             response_data = await response.json()
 
         regions = {}
@@ -39,12 +43,12 @@ class StationDataImporter(DatabaseMixin):
                 continue
         return regions
 
-    async def _fetch_stations(self) -> {str, Station}:
+    async def _fetch_stations(self, session: ClientSession) -> {str, Station}:
         url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
-        async with self.session.get(url) as response:
+        async with session.get(url) as response:
             response_data = await response.json()
 
-        regions = await self._fetch_regions()
+        regions = await self._fetch_regions(session)
         stations = {}
         for item in response_data.get('data', {}).get('stations', []):
             try:

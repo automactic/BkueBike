@@ -13,14 +13,6 @@ def export_training_data():
     TrainingData().process()
 
 
-async def import_and_update_database():
-    async with aiohttp.ClientSession() as session:
-        importer = StationDataImporter(session)
-        while True:
-            await importer.run()
-            await asyncio.sleep(600)
-
-
 async def score():
     async with aiohttp.ClientSession() as session:
         scoring = Scoring(session)
@@ -54,6 +46,6 @@ if __name__ == '__main__':
 
     # start run loop
     loop = asyncio.get_event_loop()
-    loop.create_task(import_and_update_database())
+    loop.create_task(StationDataImporter().run())
     loop.run_forever()
     loop.close()
