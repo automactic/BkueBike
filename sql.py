@@ -9,12 +9,12 @@ metadata = MetaData()
 
 stations = Table(
     'stations', metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', String, primary_key=True),
     Column('name', String, nullable=False),
     Column('short_name', String, nullable=False),
     Column('latitudes', Float, nullable=False),
     Column('longitudes', Float, nullable=False),
-    Column('region_id', Integer, nullable=False),
+    Column('region_id', String, nullable=False),
     Column('region_name', String, nullable=False),
     Column('capacity', Integer),
     Column('has_kiosk', Boolean),
