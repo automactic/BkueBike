@@ -85,6 +85,6 @@ class DataImporter(DatabaseMixin):
                 await conn.execute(statement)
 
         if new_stations:
-            logger.info(f'{self.__class__} -- found {len(new_stations)}: {new_stations.keys()}.')
-        else:
-            logger.info(f'{self.__class__} -- no new station found.')
+            logger.info(
+                f'Station -- found {len(new_stations)} new stations: {new_stations.keys()}.'
+            )
