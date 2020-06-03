@@ -2,16 +2,17 @@ import asyncio
 import dataclasses
 import logging
 from datetime import timedelta
+from pathlib import Path
+from uuid import uuid4
 
 import pandas
 import sqlalchemy as sa
 from aiohttp import ClientSession
 
 import sql
-from entities import Region, Station
+from entities import Region, Station, Trip
 from sql import DatabaseMixin
 from .base import HTTPSessionMixin
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -100,20 +101,30 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
 
 
 class TripDataCSVColumn:
+    TRIP_DURATION = 'tripduration'
+    START_STATION_ID = 'start station id'
+    END_STATION_ID = 'end station id'
     START_TIME = 'starttime'
+    STOP_TIME = 'stoptime'
+    BIKE_ID = 'bikeid'
+    USER_TYPE = 'usertype'
+    USER_BIRTH_YEAR = 'birth year'
+    USER_GENDER = 'gender'
 
 
 class TripDataImporter(DatabaseMixin):
     def __init__(self, path: Path, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.path = path
+        self.file_name = path.name
         self.data_frame = pandas.read_csv(path)
 
     async def run(self):
-        # logger.info(f'Trip[{self.path.name}] -- Started')
         if await self.is_already_imported():
             return
-        print(len(self.data_frame))
+
+        logger.info(f'Trip[{self.file_name}] -- Import Started.')
+        await self.insert_trips()
+        logger.info(f'Trip[{self.file_name}] -- Import Finished.')
 
     async def is_already_imported(self):
         start_time = self.data_frame[TripDataCSVColumn.START_TIME]
@@ -131,3 +142,31 @@ class TripDataImporter(DatabaseMixin):
             count = await result.scalar()
 
         return count >= len(self.data_frame)
+
+    async def insert_trips(self):
+        gender_map = {0: 'Male', 1: 'Female'}
+        async with self.conn() as conn:
+            next_milestone = 0.1
+            total_count = len(self.data_frame)
+            for index, row in self.data_frame.iterrows():
+                trip = Trip(**{
+                    'id': str(uuid4()),
+                    'trip_duration': row[TripDataCSVColumn.TRIP_DURATION],
+                    'start_station_id': row[TripDataCSVColumn.START_STATION_ID],
+                    'end_station_id': row[TripDataCSVColumn.END_STATION_ID],
+                    'start_time': row[TripDataCSVColumn.START_TIME],
+                    'stop_time': row[TripDataCSVColumn.STOP_TIME],
+                    'bike_id': row[TripDataCSVColumn.BIKE_ID],
+                    'user_type': row[TripDataCSVColumn.USER_TYPE],
+                    'user_birth_year': row[TripDataCSVColumn.USER_BIRTH_YEAR],
+                    'user_gender': gender_map.get(row[TripDataCSVColumn.USER_GENDER], 'Other'),
+                })
+                statement = sql.trips.insert().values(**dataclasses.asdict(trip))
+                await conn.execute(statement)
+
+                progress = (index + 1) / total_count
+                if progress > next_milestone:
+                    logger.info((
+                        f'Trip[{self.file_name}] -- '
+                        f'Import in Progress: {progress:.0%}({index + 1}/{total_count})'
+                    ))

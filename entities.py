@@ -24,13 +24,13 @@ class Station:
 class Trip:
     id: str
     trip_duration: float
-    predicted_trip_duration: float
     start_station_id: str
     end_station_id: str
     start_time: datetime
-    end_time: datetime
+    stop_time: datetime
     bike_id: int
     user_type: str
     user_birth_year: int
     user_gender: str
-    submitted_actual: bool
+    predicted_trip_duration: float = None
+    submitted_actual: bool = False

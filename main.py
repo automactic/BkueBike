@@ -5,6 +5,7 @@ import aiohttp
 
 import sql
 from pipeline import TrainingData, Scoring, Actuals, StationDataImporter, TripDataImporter
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,6 @@ if __name__ == '__main__':
     # start run loop
     loop = asyncio.get_event_loop()
     loop.create_task(StationDataImporter().run())
-    loop.create_task(TripDataImporter('data/202001-bluebikes-tripdata.csv').run())
+    loop.create_task(TripDataImporter(Path('data/202001-bluebikes-tripdata.csv')).run())
     loop.run_forever()
     loop.close()

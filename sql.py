@@ -28,7 +28,7 @@ trips = Table(
     Column('start_station_id', None, ForeignKey('stations.id')),
     Column('end_station_id', None, ForeignKey('stations.id')),
     Column('start_time', DateTime, nullable=False),
-    Column('end_time', DateTime, nullable=False),
+    Column('stop_time', DateTime, nullable=False),
     Column('bike_id', Integer, nullable=False),
     Column('user_type', String, nullable=False),
     Column('user_birth_year', Integer, nullable=False),
