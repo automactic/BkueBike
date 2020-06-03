@@ -32,7 +32,7 @@ trips = Table(
     Column('bike_id', Integer, nullable=False),
     Column('user_type', String, nullable=False),
     Column('user_birth_year', Integer, nullable=False),
-    Column('user_gender', Integer, nullable=False),
+    Column('user_gender', String, nullable=False),
     Column('submitted_actual', Boolean, nullable=False, default=False),
 )
 
