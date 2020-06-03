@@ -1,34 +1,84 @@
-from os import listdir
-from os.path import isfile, join
+import dataclasses
 import logging
-from data_sources import Stations, Regions, Trips
-from database import Database
 
+import aiohttp
+import sqlalchemy as sa
+
+import sql
+from entities import Region, Station
+from sql import DatabaseMixin
 
 logger = logging.getLogger(__name__)
 
 
-class DataImporter:
-    def __init__(self, dir_path='data'):
-        self.dir_path = dir_path
+class DataImporter(DatabaseMixin):
+    def __init__(self, session: aiohttp.ClientSession, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cwd = 'data'
+        self.session = session
 
-    def _get_file_paths(self):
-        files = [join(self.dir_path, file) for file in listdir(self.dir_path)]
-        return [file for file in files if isfile(file) and file.endswith('.csv')]
+    async def run(self):
+        stations = await self._fetch_stations()
+        await self._upsert_stations(stations)
 
-    def scan_and_update(self):
-        logger.info('Data Import - starting...')
+    async def _fetch_regions(self) -> {str, Region}:
+        url = 'https://gbfs.bluebikes.com/gbfs/en/system_regions.json'
+        async with self.session.get(url) as response:
+            response_data = await response.json()
 
-        stations = Stations()
-        regions = Regions()
-        with Database() as database:
-            database.update_stations(stations, regions)
-            logger.info('Data Import - stations updated.')
+        regions = {}
+        for item in response_data.get('data', {}).get('regions', []):
+            try:
+                region = Region(**{
+                    'id': item['region_id'],
+                    'name': item['name'],
+                })
+                regions[region.id] = region
+            except (KeyError, TypeError):
+                continue
+        return regions
 
-            file_paths = self._get_file_paths()
-            logger.debug(f'Data Import - discovered {len(file_paths)} files, {file_paths}')
-            for file_path in file_paths:
-                trips = Trips(file_path)
-                database.update_trip_data(trips)
+    async def _fetch_stations(self) -> {str, Station}:
+        url = 'https://gbfs.bluebikes.com/gbfs/en/station_information.json'
+        async with self.session.get(url) as response:
+            response_data = await response.json()
 
-        logger.info('Data Import - done!')
+        regions = await self._fetch_regions()
+        stations = {}
+        for item in response_data.get('data', {}).get('stations', []):
+            try:
+                region = regions[item['region_id']]
+                station = Station(**{
+                    'id': item['station_id'],
+                    'name': item['name'],
+                    'short_name': item['short_name'],
+                    'latitude': item['lat'],
+                    'longitude': item['lon'],
+                    'region_id': region.id,
+                    'region_name': region.name,
+                    'capacity': item['capacity'],
+                    'has_kiosk': item['has_kiosk'],
+                })
+                stations[station.id] = station
+            except (KeyError, TypeError):
+                continue
+        return stations
+
+    async def _upsert_stations(self, stations: {str, Station}):
+        # retrieve ids for all existing stations
+        async with self.conn() as conn:
+            result = await conn.execute(sa.select([sql.stations.c.id]))
+            existing_station_ids = [row.id async for row in result]
+
+        # figure out which stations should be inserted
+        new_station_ids = set(stations) - set(existing_station_ids)
+        new_stations = [
+            station for station_id, station in stations.items()
+            if station_id in new_station_ids
+        ]
+
+        async with self.conn() as conn:
+            for station in new_stations:
+                statement = sql.stations.insert().values(**dataclasses.asdict(station))
+                result = await conn.execute(statement)
+                print(result)

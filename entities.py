@@ -12,7 +12,7 @@ class Station:
     id: str
     name: str
     short_name: str
-    latitudes: float
+    latitude: float
     longitude: float
     region_id: str
     region_name: str
