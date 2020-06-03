@@ -4,7 +4,7 @@ import logging
 import aiohttp
 
 import sql
-from pipeline import TrainingData, Scoring, Actuals, DataImporter
+from pipeline import TrainingData, Scoring, Actuals, StationDataImporter
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def export_training_data():
 
 async def import_and_update_database():
     async with aiohttp.ClientSession() as session:
-        importer = DataImporter(session)
+        importer = StationDataImporter(session)
         while True:
             await importer.run()
             await asyncio.sleep(600)

@@ -11,7 +11,7 @@ from sql import DatabaseMixin
 logger = logging.getLogger(__name__)
 
 
-class DataImporter(DatabaseMixin):
+class StationDataImporter(DatabaseMixin):
     def __init__(self, session: aiohttp.ClientSession, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cwd = 'data'
@@ -88,3 +88,7 @@ class DataImporter(DatabaseMixin):
             logger.info(
                 f'Station -- found {len(new_stations)} new stations: {new_stations.keys()}.'
             )
+
+
+class TripDataImporter(DatabaseMixin):
+    pass
