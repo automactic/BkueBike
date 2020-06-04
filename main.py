@@ -14,6 +14,14 @@ def export_training_data():
     TrainingData().process()
 
 
+async def import_data():
+    await StationDataImporter().run()
+    for path in Path('./data').iterdir():
+        if not path.name.endswith('.csv'):
+            continue
+        await TripDataImporter(path).run()
+
+
 async def score():
     async with aiohttp.ClientSession() as session:
         scoring = Scoring(session)
@@ -48,6 +56,6 @@ if __name__ == '__main__':
     # start run loop
     loop = asyncio.get_event_loop()
     # loop.create_task(StationDataImporter().run())
-    loop.create_task(TripDataImporter(Path('data/202001-bluebikes-tripdata.csv')).run())
+    loop.create_task(import_data())
     loop.run_forever()
     loop.close()

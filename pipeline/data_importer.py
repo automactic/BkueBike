@@ -22,11 +22,9 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
         super().__init__(*args, **kwargs)
 
     async def run(self):
-        while True:
-            async with self.create_session() as session:
-                stations = await self._fetch_stations(session)
-            await self._upsert_stations(stations)
-            await asyncio.sleep(timedelta(days=1).total_seconds())
+        async with self.create_session() as session:
+            stations = await self._fetch_stations(session)
+        await self._upsert_stations(stations)
 
     @staticmethod
     async def _fetch_regions(session: ClientSession) -> {str, Region}:
@@ -124,11 +122,12 @@ class TripDataImporter(StationDataImporter):
 
     async def run(self):
         if await self.is_already_imported():
+            logger.info(f'Trip[{self.file_name}] -- Already Imported.')
             return
 
         logger.info(f'Trip[{self.file_name}] -- Import Started.')
         await self.insert_stations()
-        await self.insert_trips()
+        self.insert_trips()
         logger.info(f'Trip[{self.file_name}] -- Import Finished.')
 
     async def is_already_imported(self):
@@ -172,7 +171,7 @@ class TripDataImporter(StationDataImporter):
         ))
         await self._upsert_stations(stations)
 
-    async def insert_trips(self):
+    def insert_trips(self):
         gender_map = {0: 'Male', 1: 'Female'}
         total_count = len(self.data_frame)
         chunck_size = 1000
