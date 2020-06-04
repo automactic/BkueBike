@@ -53,8 +53,10 @@ async def actual_submit():
 
 if __name__ == '__main__':
     # initialization
+    sql.create_database()
     sql.create_tables()
 
+    # configure logger
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 

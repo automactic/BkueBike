@@ -15,4 +15,7 @@ services:
     build: .
     restart: always
     container_name: bluebike
+    depends_on:
+      - pgsql
     volumes:
+      - /home/ubuntu/workspace/BlueBike/data:/usr/src/app/data

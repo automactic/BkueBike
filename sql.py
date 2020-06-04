@@ -36,10 +36,13 @@ trips = Table(
 
 
 def create_database():
-    conn = DatabaseMixin.create_engine(database='postgres').connect()
-    conn.execute("commit")
-    conn.execute("CREATE DATABASE blue_bike")
-    conn.close()
+    try:
+        conn = DatabaseMixin.create_engine(database='postgres').connect()
+        conn.execute("commit")
+        conn.execute("CREATE DATABASE blue_bike")
+        conn.close()
+    except Exception:
+        pass
 
 
 def create_tables():
