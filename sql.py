@@ -55,10 +55,10 @@ class DatabaseMixin:
 
     @staticmethod
     def create_engine(database: str = 'blue_bike') -> sa.engine.Engine:
-        return sa.create_engine(f'postgresql://postgres:password@localhost/{database}')
+        return sa.create_engine(f'postgresql://postgres:password@pgsql/{database}')
 
     @asynccontextmanager
     async def conn(self, database: str = 'blue_bike') -> typing.AsyncContextManager[SAConnection]:
-        async with create_engine(f'postgresql://postgres:password@localhost/{database}') as engine:
+        async with create_engine(f'postgresql://postgres:password@pgsql/{database}') as engine:
             async with engine.acquire() as conn:
                 yield conn
