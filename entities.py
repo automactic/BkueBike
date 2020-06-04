@@ -13,9 +13,9 @@ class Station:
     name: str
     latitude: float
     longitude: float
-    region_name: str
-    capacity: int
-    has_kiosk: bool
+    region_name: str = None
+    capacity: int = None
+    has_kiosk: bool = None
 
 
 @dataclass
