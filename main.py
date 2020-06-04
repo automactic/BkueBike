@@ -6,7 +6,7 @@ import aiohttp
 import sql
 from pipeline import TrainingData, Scoring, Actuals, StationDataImporter, TripDataImporter
 from pathlib import Path
-
+import zipfile
 logger = logging.getLogger(__name__)
 
 
@@ -16,10 +16,15 @@ def export_training_data():
 
 async def import_data():
     await StationDataImporter().run()
-    for path in Path('./data').iterdir():
+
+    with zipfile.ZipFile('./data/data.zip', 'r') as file:
+        file.extractall('./data')
+
+    for path in sorted(Path('./data').iterdir()):
         if not path.name.endswith('.csv'):
             continue
         await TripDataImporter(path).run()
+        path.unlink()
 
 
 async def score():
