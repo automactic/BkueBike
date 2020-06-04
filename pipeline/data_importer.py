@@ -145,8 +145,8 @@ class TripDataImporter(StationDataImporter):
 
         return count >= len(self.data_frame)
 
-    def _extract_stations(self, name_column, latitude_column, longitude_column) -> {str, Station}:
-        grouped = self.data_frame.groupby([TripDataCSVColumn.START_STATION_ID]).first()
+    def _extract_stations(self, id_column, name_column, latitude_column, longitude_column) -> {str, Station}:
+        grouped = self.data_frame.groupby([id_column]).first()
         return {
             str(station_id): Station(**{
                 'id': str(station_id),
@@ -158,11 +158,13 @@ class TripDataImporter(StationDataImporter):
 
     async def insert_stations(self):
         stations = self._extract_stations(
+            id_column=TripDataCSVColumn.START_STATION_ID,
             name_column=TripDataCSVColumn.START_STATION_NAME,
             latitude_column=TripDataCSVColumn.START_STATION_LATITUDE,
             longitude_column=TripDataCSVColumn.START_STATION_LONGITUDE,
         )
         stations.update(self._extract_stations(
+            id_column=TripDataCSVColumn.END_STATION_ID,
             name_column=TripDataCSVColumn.END_STATION_NAME,
             latitude_column=TripDataCSVColumn.END_STATION_LATITUDE,
             longitude_column=TripDataCSVColumn.END_STATION_LONGITUDE,
