@@ -55,7 +55,6 @@ if __name__ == '__main__':
 
     # start run loop
     loop = asyncio.get_event_loop()
-    # loop.create_task(StationDataImporter().run())
     loop.create_task(import_data())
     loop.run_forever()
     loop.close()
