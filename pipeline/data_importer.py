@@ -177,7 +177,7 @@ class TripDataImporter(StationDataImporter):
         chunck_size = 1000
 
         for offset in range(0, total_count, chunck_size):
-            # convert the chunch to a list of Trip
+            # convert the chunk to a list of Trip
             trips = []
             for index, row in self.data_frame[offset:offset + chunck_size].iterrows():
                 trip = {
