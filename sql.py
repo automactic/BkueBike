@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-
+import os
 import sqlalchemy as sa
 from aiopg.sa import create_engine, SAConnection
 from sqlalchemy import Table, Column, Integer, Float, String, Boolean, DateTime, MetaData, ForeignKey
@@ -50,15 +50,28 @@ def create_tables():
 
 
 class DatabaseMixin:
+    hostname = os.getenv('POSTGRES_HOSTNAME')
+    port = os.getenv('POSTGRES_PORT')
+    username = os.getenv('POSTGRES_USERNAME')
+    password = os.getenv('POSTGRES_PASSWORD')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if not all([self.hostname, self.port, self.username, self.password]):
+            raise ValueError(
+                'Missing POSTGRES environment variables',
+                self.hostname, self.port, self.username, self.password
+            )
 
-    @staticmethod
-    def create_engine(database: str = 'blue_bike') -> sa.engine.Engine:
-        return sa.create_engine(f'postgresql://postgres:password@10.50.225.31:5435/{database}')
+    def _dsn(self, database: str = 'blue_bike'):
+        return f'postgresql://{self.username}:{self.password}' \
+               f'@{self.hostname}:{self.port}/{database}'
+
+    def create_engine(self, database: str = 'blue_bike') -> sa.engine.Engine:
+        return sa.create_engine(self._dsn(database))
 
     @asynccontextmanager
     async def conn(self, database: str = 'blue_bike') -> typing.AsyncContextManager[SAConnection]:
-        async with create_engine(f'postgresql://postgres:password@pgsql/{database}') as engine:
+        async with create_engine(self._dsn(database)) as engine:
             async with engine.acquire() as conn:
                 yield conn
