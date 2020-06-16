@@ -15,6 +15,24 @@ from .base import HTTPSessionMixin
 logger = logging.getLogger(__name__)
 
 
+class TripDataCSVColumn:
+    TRIP_DURATION = 'tripduration'
+    START_STATION_ID = 'start station id'
+    START_STATION_NAME = 'start station name'
+    START_STATION_LATITUDE = 'start station latitude'
+    START_STATION_LONGITUDE = 'start station longitude'
+    END_STATION_ID = 'end station id'
+    END_STATION_NAME = 'end station name'
+    END_STATION_LATITUDE = 'end station latitude'
+    END_STATION_LONGITUDE = 'end station longitude'
+    START_TIME = 'starttime'
+    STOP_TIME = 'stoptime'
+    BIKE_ID = 'bikeid'
+    USER_TYPE = 'usertype'
+    USER_BIRTH_YEAR = 'birth year'
+    USER_GENDER = 'gender'
+
+
 class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -92,24 +110,6 @@ class StationDataImporter(DatabaseMixin, HTTPSessionMixin):
             )
         else:
             logger.info('Station -- no new station found.')
-
-
-class TripDataCSVColumn:
-    TRIP_DURATION = 'tripduration'
-    START_STATION_ID = 'start station id'
-    START_STATION_NAME = 'start station name'
-    START_STATION_LATITUDE = 'start station latitude'
-    START_STATION_LONGITUDE = 'start station longitude'
-    END_STATION_ID = 'end station id'
-    END_STATION_NAME = 'end station name'
-    END_STATION_LATITUDE = 'end station latitude'
-    END_STATION_LONGITUDE = 'end station longitude'
-    START_TIME = 'starttime'
-    STOP_TIME = 'stoptime'
-    BIKE_ID = 'bikeid'
-    USER_TYPE = 'usertype'
-    USER_BIRTH_YEAR = 'birth year'
-    USER_GENDER = 'gender'
 
 
 class TripDataImporter(StationDataImporter):
