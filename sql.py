@@ -1,9 +1,11 @@
-from contextlib import asynccontextmanager
 import os
+import typing
+from contextlib import asynccontextmanager
+
 import sqlalchemy as sa
 from aiopg.sa import create_engine, SAConnection
-from sqlalchemy import Table, Column, Integer, Float, String, Boolean, DateTime, MetaData, ForeignKey
-import typing
+from sqlalchemy import Table, Column, Integer, Float, String, Boolean, DateTime, MetaData, \
+    ForeignKey
 
 metadata = MetaData()
 
