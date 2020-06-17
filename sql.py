@@ -29,6 +29,8 @@ trips = Table(
     Column('end_station_id', None, ForeignKey('stations.id')),
     Column('start_time', DateTime, nullable=False),
     Column('stop_time', DateTime, nullable=False),
+    Column('start_time_normalized', DateTime, nullable=True),
+    Column('stop_time_normalized', DateTime, nullable=True),
     Column('bike_id', Integer, nullable=False),
     Column('user_type', String, nullable=False),
     Column('user_birth_year', Integer, nullable=False),
@@ -39,7 +41,7 @@ trips = Table(
 
 def create_database():
     try:
-        conn = DatabaseMixin.create_engine(database='postgres').connect()
+        conn = DatabaseMixin().create_engine(database='postgres').connect()
         conn.execute("commit")
         conn.execute("CREATE DATABASE blue_bike")
         conn.close()
@@ -48,7 +50,7 @@ def create_database():
 
 
 def create_tables():
-    metadata.create_all(DatabaseMixin.create_engine())
+    metadata.create_all(DatabaseMixin().create_engine())
 
 
 class DatabaseMixin:
