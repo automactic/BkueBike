@@ -11,7 +11,7 @@ import sql
 from entities import Region, Station
 from sql import DatabaseMixin
 from .base import HTTPSessionMixin
-
+import pytz
 logger = logging.getLogger(__name__)
 
 
@@ -145,7 +145,9 @@ class TripDataImporter(StationDataImporter):
 
         return count >= len(self.data_frame)
 
-    def _extract_stations(self, id_column, name_column, latitude_column, longitude_column) -> {str, Station}:
+    def _extract_stations(
+            self, id_column, name_column, latitude_column, longitude_column
+    ) -> {str, Station}:
         grouped = self.data_frame.groupby([id_column]).first()
         return {
             str(station_id): Station(**{
@@ -173,6 +175,7 @@ class TripDataImporter(StationDataImporter):
 
     def insert_trips(self):
         gender_map = {0: 'Male', 1: 'Female'}
+        timezone = pytz.timezone('US/Eastern')
         total_count = len(self.data_frame)
         chunck_size = 1000
 
@@ -185,8 +188,8 @@ class TripDataImporter(StationDataImporter):
                     'trip_duration': row[TripDataCSVColumn.TRIP_DURATION],
                     'start_station_id': row[TripDataCSVColumn.START_STATION_ID],
                     'end_station_id': row[TripDataCSVColumn.END_STATION_ID],
-                    'start_time': row[TripDataCSVColumn.START_TIME],
-                    'stop_time': row[TripDataCSVColumn.STOP_TIME],
+                    'start_time': row[TripDataCSVColumn.START_TIME].replace(tzinfo=timezone),
+                    'stop_time': row[TripDataCSVColumn.STOP_TIME].replace(tzinfo=timezone),
                     'bike_id': row[TripDataCSVColumn.BIKE_ID],
                     'user_type': row[TripDataCSVColumn.USER_TYPE],
                     'user_birth_year': row[TripDataCSVColumn.USER_BIRTH_YEAR],
