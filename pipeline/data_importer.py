@@ -1,9 +1,11 @@
 import dataclasses
 import logging
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
 import pandas
+import pytz
 import sqlalchemy as sa
 from aiohttp import ClientSession
 
@@ -11,7 +13,7 @@ import sql
 from entities import Region, Station
 from sql import DatabaseMixin
 from .base import HTTPSessionMixin
-import pytz
+
 logger = logging.getLogger(__name__)
 
 
@@ -116,7 +118,9 @@ class TripDataImporter(StationDataImporter):
     def __init__(self, path: Path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.file_name = path.name
-        self.data_frame = pandas.read_csv(path)
+        self.data_frame = pandas.read_csv(
+            path, parse_dates=[TripDataCSVColumn.START_TIME, TripDataCSVColumn.STOP_TIME]
+        )
 
     async def run(self):
         if await self.is_already_imported():
@@ -177,19 +181,31 @@ class TripDataImporter(StationDataImporter):
         gender_map = {0: 'Male', 1: 'Female'}
         timezone = pytz.timezone('US/Eastern')
         total_count = len(self.data_frame)
+        prediction_start_time = datetime(2020, 1, 1, tzinfo=timezone)
         chunck_size = 1000
 
         for offset in range(0, total_count, chunck_size):
             # convert the chunk to a list of Trip
             trips = []
             for index, row in self.data_frame[offset:offset + chunck_size].iterrows():
+                start_time = row[TripDataCSVColumn.START_TIME].replace(tzinfo=timezone)
+                stop_time = row[TripDataCSVColumn.STOP_TIME].replace(tzinfo=timezone)
+                if start_time >= prediction_start_time and stop_time >= prediction_start_time:
+                    start_time_normalized = start_time.replace(year=2020, month=1)
+                    stop_time_normalized = stop_time.replace(year=2020, month=1)
+                else:
+                    start_time_normalized = None
+                    stop_time_normalized = None
+
                 trip = {
                     'id': str(uuid4()),
                     'trip_duration': row[TripDataCSVColumn.TRIP_DURATION],
                     'start_station_id': row[TripDataCSVColumn.START_STATION_ID],
                     'end_station_id': row[TripDataCSVColumn.END_STATION_ID],
-                    'start_time': row[TripDataCSVColumn.START_TIME].replace(tzinfo=timezone),
-                    'stop_time': row[TripDataCSVColumn.STOP_TIME].replace(tzinfo=timezone),
+                    'start_time': start_time,
+                    'stop_time': stop_time,
+                    'start_time_normalized': start_time_normalized,
+                    'stop_time_normalized': stop_time_normalized,
                     'bike_id': row[TripDataCSVColumn.BIKE_ID],
                     'user_type': row[TripDataCSVColumn.USER_TYPE],
                     'user_birth_year': row[TripDataCSVColumn.USER_BIRTH_YEAR],

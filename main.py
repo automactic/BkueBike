@@ -1,12 +1,13 @@
 import asyncio
 import logging
+import zipfile
+from pathlib import Path
 
 import aiohttp
 
 import sql
 from pipeline import TrainingData, Scoring, Actuals, StationDataImporter, TripDataImporter
-from pathlib import Path
-import zipfile
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,6 +26,8 @@ async def import_data():
             continue
         await TripDataImporter(path).run()
         path.unlink()
+
+    logger.info('Data Import Complete.')
 
 
 async def score():
