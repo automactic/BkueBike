@@ -6,13 +6,9 @@ from pathlib import Path
 import aiohttp
 
 import sql
-from pipeline import TrainingData, Scoring, Actuals, StationDataImporter, TripDataImporter
+from pipeline import Actuals, StationDataImporter, TripDataImporter, Predict
 
 logger = logging.getLogger(__name__)
-
-
-def export_training_data():
-    TrainingData().process()
 
 
 async def import_data():
@@ -28,18 +24,6 @@ async def import_data():
         path.unlink()
 
     logger.info('Data Import Complete.')
-
-
-async def score():
-    async with aiohttp.ClientSession() as session:
-        scoring = Scoring(session)
-        while True:
-            try:
-                await scoring.predict()
-                await asyncio.sleep(10)
-            except Exception as e:
-                logger.error(e)
-                await asyncio.sleep(100)
 
 
 async def actual_submit():
@@ -66,5 +50,6 @@ if __name__ == '__main__':
     # start run loop
     loop = asyncio.get_event_loop()
     loop.create_task(import_data())
+    loop.create_task(Predict().run())
     loop.run_forever()
     loop.close()

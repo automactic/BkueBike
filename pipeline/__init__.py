@@ -1,4 +1,4 @@
 from .actuals import Actuals
 from .data_importer import StationDataImporter, TripDataImporter
-from .scoring import Scoring
+from .predict import Predict
 from .training import TrainingData
